@@ -191,6 +191,7 @@ export default function InvestigationTimeline({ alert, llmConfig, onReset, onErr
           status={steps[1].status}
           agentText={steps[1].agentText}
           queries={queries}
+          alert={alert}
           onFetchData={step3}
         />
       </StepCard>
