@@ -184,6 +184,33 @@ export interface SummaryData {
   sopChecklist: { item: string; passed: boolean }[];
 }
 
+export interface RuleCondition {
+  id: string;
+  field: string;
+  label: string;
+  operator: string;
+  value: string;
+  value2?: string;
+  locked: boolean;
+}
+
+export interface BlockImpact {
+  fraudBlocked: number;
+  genuineBlocked: number;
+  catchRate: number;
+  falsePositiveRate: number;
+  estimatedSavings: number;
+}
+
+export interface Assessment {
+  verdict: 'True Positive' | 'False Positive';
+  confidence: 'High' | 'Medium' | 'Low';
+  reasonCode: string;
+  notes: string;
+  analystId: string;
+  timestamp: string;
+}
+
 export type StepStatus = 'idle' | 'streaming' | 'waiting' | 'complete' | 'skipped';
 
 export interface InvestigationStep {

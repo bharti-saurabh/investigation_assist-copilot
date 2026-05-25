@@ -1,4 +1,119 @@
-import { Alert, AlertProfile, DiagnosisData, BlockRule, EmailDraft, SummaryData } from '../types';
+import { Alert, AlertProfile, DiagnosisData, BlockRule, EmailDraft, SummaryData, RuleCondition, BlockImpact } from '../types';
+
+// ─── Available Condition Fields ───────────────────────────────────────────────
+
+export const AVAILABLE_FIELDS = [
+  { field: 'txn_amount',      label: 'Transaction Amount (USD)', operator: 'BETWEEN', placeholder: '0.01', placeholder2: '99.99' },
+  { field: 'pos_entry_mode',  label: 'POS Entry Mode',           operator: 'IN',      placeholder: '01, 80' },
+  { field: 'mfa_indicator',   label: 'MFA Status',               operator: '=',       placeholder: 'N' },
+  { field: 'country_code',    label: 'Merchant Country',         operator: 'IN',      placeholder: 'SGP, MYS, IDN' },
+  { field: 'pan_history_flag',label: 'PAN Has Prior History',    operator: '=',       placeholder: 'N' },
+  { field: 'response_code',   label: 'Response Code',            operator: 'IN',      placeholder: '05, N7, 62' },
+];
+
+export const TP_REASON_CODES = [
+  { code: 'BIN-ATK-HIGH-VOL',  label: 'High volume BIN attack — confirmed fraud pattern' },
+  { code: 'CARD-TEST-AUTO',    label: 'Automated card testing — small amount, no MFA, keyed entry' },
+  { code: 'ATO-VELOCITY',      label: 'Account takeover — velocity pattern with new PANs' },
+  { code: 'CNP-SURGE',         label: 'Abnormal CNP surge — geography/amount mismatch' },
+  { code: 'ATM-CASHOUT',       label: 'Coordinated ATM/POS cashout pattern' },
+];
+
+export const FP_REASON_CODES = [
+  { code: 'ORGANIC-SEASONAL',  label: 'Organic seasonal volume growth — within normal bounds' },
+  { code: 'LEGIT-MERCHANT',    label: 'Legitimate merchant activity misclassified' },
+  { code: 'MKTG-CAMPAIGN',     label: 'Marketing campaign or promotional event spike' },
+  { code: 'SYS-THRESHOLD',     label: 'Monitoring threshold miscalibration' },
+  { code: 'CROSS-BORDER-NORM', label: 'Normal cross-border CNP pattern for this issuer' },
+];
+
+// ─── Live Block Impact Simulation ─────────────────────────────────────────────
+
+function rangeOverlaps(rangeStr: string, lower: number, upper: number): boolean {
+  const match = rangeStr.match(/\$(\d+)[–\-]\$(\d+)/);
+  if (!match) return upper >= 500;
+  return parseInt(match[1]) < upper && parseInt(match[2]) > lower;
+}
+
+function getConditionImpact(cond: RuleCondition, data: DiagnosisData): { fraud: number; genuine: number } {
+  switch (cond.field) {
+    case 'txn_amount': {
+      const upper = parseFloat(cond.value2 ?? '9999');
+      const lower = parseFloat(cond.value ?? '0');
+      const fraudPct = data.amountDistribution
+        .filter(b => rangeOverlaps(b.range, lower, upper))
+        .reduce((s, b) => s + b.pct_of_fraud, 0) / 100;
+      const genuineFrac = upper <= 50 ? 0.12 : upper <= 75 ? 0.19 : upper <= 100 ? 0.28 : upper <= 250 ? 0.55 : 0.75;
+      return { fraud: Math.max(fraudPct, 0.01), genuine: genuineFrac };
+    }
+    case 'pos_entry_mode': {
+      const modes = cond.value.split(',').map(v => v.trim());
+      const hasFraudModes = modes.some(m => ['01', '80'].includes(m));
+      return hasFraudModes ? { fraud: 0.96, genuine: 0.03 } : { fraud: 0.04, genuine: 0.97 };
+    }
+    case 'mfa_indicator':
+      return cond.value.trim() === 'N' ? { fraud: 0.98, genuine: 0.15 } : { fraud: 0.02, genuine: 0.85 };
+    case 'country_code': {
+      const countries = cond.value.split(',').map(v => v.trim().toUpperCase());
+      const matched = data.geographicBreakdown.filter(g =>
+        countries.some(c => g.country.toUpperCase().includes(c))
+      );
+      const totalFraud = data.geographicBreakdown.reduce((s, g) => s + g.fraud, 0);
+      const fraudFrac = matched.reduce((s, g) => s + g.fraud, 0) / Math.max(totalFraud, 1);
+      return { fraud: Math.max(fraudFrac, 0.01), genuine: Math.min(fraudFrac * 0.25, 0.5) };
+    }
+    case 'pan_history_flag':
+      return cond.value.trim() === 'N' ? { fraud: 0.72, genuine: 0.08 } : { fraud: 0.28, genuine: 0.92 };
+    case 'response_code': {
+      const rcs = cond.value.split(',').map(v => v.trim());
+      const total = data.responseCodeBreakdown.reduce((s, r) => s + r.count, 0);
+      const fraudCount = data.responseCodeBreakdown
+        .filter(r => rcs.includes(r.code) && r.is_fraud_indicator)
+        .reduce((s, r) => s + r.count, 0);
+      return {
+        fraud: fraudCount / Math.max(total, 1),
+        genuine: rcs.includes('00') ? 0.75 : 0.08,
+      };
+    }
+    default:
+      return { fraud: 1.0, genuine: 1.0 };
+  }
+}
+
+export function simulateBlockImpact(conditions: RuleCondition[], data: DiagnosisData): BlockImpact {
+  if (!data.blockRule) return { fraudBlocked: 0, genuineBlocked: 0, catchRate: 0, falsePositiveRate: 0, estimatedSavings: 0 };
+  const TOTAL_FRAUD = data.blockRule.fraudBlocked;
+  const TOTAL_GENUINE = Math.round(TOTAL_FRAUD * (data.blockRule.falsePositiveRate / 100));
+
+  let fraudFrac = 1.0;
+  let genuineFrac = 1.0;
+  for (const cond of conditions) {
+    if (cond.locked) continue;
+    const impact = getConditionImpact(cond, data);
+    fraudFrac *= impact.fraud;
+    genuineFrac *= impact.genuine;
+  }
+
+  const fraudBlocked = Math.round(TOTAL_FRAUD * fraudFrac);
+  const genuineBlocked = Math.round(TOTAL_GENUINE * genuineFrac);
+  return {
+    fraudBlocked,
+    genuineBlocked,
+    catchRate: parseFloat((fraudBlocked / TOTAL_FRAUD * 100).toFixed(1)),
+    falsePositiveRate: parseFloat((genuineBlocked / Math.max(TOTAL_GENUINE, 1) * 100).toFixed(2)),
+    estimatedSavings: Math.round(fraudBlocked * 49.5),
+  };
+}
+
+export function buildDefaultConditions(alert: Alert): RuleCondition[] {
+  return [
+    { id: 'bin',    field: 'issuer_bin',      label: 'Issuer BIN',              operator: '=',       value: alert.details.bin,   locked: true },
+    { id: 'caid',   field: 'merchant_id',     label: 'Merchant CAID',           operator: '=',       value: alert.details.caid,  locked: true },
+    { id: 'amt',    field: 'txn_amount',      label: 'Transaction Amount (USD)', operator: 'BETWEEN', value: '0.01', value2: '99.99', locked: false },
+    { id: 'pos',    field: 'pos_entry_mode',  label: 'POS Entry Mode',           operator: 'IN',      value: '01, 80',            locked: false },
+    { id: 'mfa',    field: 'mfa_indicator',   label: 'MFA Status',               operator: '=',       value: 'N',                 locked: false },
+  ];
+}
 
 // ─── Alerts ───────────────────────────────────────────────────────────────────
 

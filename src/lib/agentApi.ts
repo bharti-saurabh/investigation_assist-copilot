@@ -113,60 +113,105 @@ What are you querying and why?`,
   return { queries: buildQueries(alert) };
 }
 
-export async function runAnalyzeData(
+// Phase 1: React to FVR data as soon as it arrives
+export async function runAnalyzeFVR(
   alert: Alert,
+  fvrData: import('../types').FVRRow[],
   llmConfig: LLMConfig,
   onText: (t: string) => void,
-): Promise<DiagnosisData> {
-  const data = getMockDiagnosisData(alert);
+): Promise<void> {
+  const surgeRows = fvrData.filter(r => r.fraud_rate_pct > 50).sort((a, b) => b.fraud_rate_pct - a.fraud_rate_pct);
+  const peakRow = surgeRows[0];
+  const surgeStart = fvrData.find(r => r.fraud_rate_pct > 50);
 
   await streamClaude(
     llmConfig,
-    `You are a senior fraud analyst reviewing pulled data. Narrate key findings as you scan through the data.
-Reference specific numbers. Identify the most critical signals. State your working hypothesis.
-End with a clear preliminary assessment: True Positive or False Positive, and your confidence level.
-Max 200 words. No bullets. No headers. Direct, precise language.`,
-    `Data just came back. Here's what I see:
+    `You are a fraud analyst. The 4-hour velocity report just returned. React immediately to what you see.
+Reference specific hours, exact counts, and exact fraud rates from the data below.
+Tell the analyst where the surge begins and how severe it is. Sound like you're reading it in real time.
+Max 100 words. No headers. Urgent if warranted.`,
+    `FVR just returned — 24 rows. Here are the surge hours:
 
-Alert: ${alert.type} on ${alert.details.merchant} (BIN: ${alert.details.bin})
-Attack Taxonomy: ${alert.details.attackTaxonomy}
+${surgeRows.slice(0, 6).map(r => `${r.hour}: ${r.total_txns} txns | ${r.fraud_txns} fraud | ${r.fraud_rate_pct}% fraud rate | $${r.fraud_amount.toLocaleString()} exposure`).join('\n')}
 
-KEY SIGNALS:
-- Peak fraud rate: ${data.summary.peakFraudRate} at ${data.summary.peakHour}
-- Total fraud txns (last 4h): ${data.summary.totalFraud4h} / ${data.summary.totalTxns4h}
-- Fraud exposure: $${data.summary.totalFraudAmount?.toLocaleString()}
-- Unique PANs: ${data.summary.uniquePANs} (${data.summary.newPANs} with no prior merchant history)
-- POS Entry Mode: ${data.attackTaxonomyDetails.posEntryModeShift}
-- Amount distribution: ${data.attackTaxonomyDetails.concentrationAmount}
-- Historical context: ${data.attackTaxonomyDetails.historicalActivity}
-- New card ratio: ${data.attackTaxonomyDetails.newCardsRatio}
-- Top RC: ${data.responseCodeBreakdown[0].code} (${data.responseCodeBreakdown[0].description}) — ${data.responseCodeBreakdown[0].pct}%
-- Fraud RCs: ${data.responseCodeBreakdown.filter(r => r.is_fraud_indicator).map(r => `${r.code} (${r.pct}%)`).join(', ')}
-- Geography: ${data.geographicBreakdown[0].country} — ${data.geographicBreakdown[0].fraud_rate}% fraud rate
+Baseline (pre-surge sample):
+${fvrData.filter(r => r.fraud_rate_pct < 5).slice(0, 3).map(r => `${r.hour}: ${r.total_txns} txns | ${r.fraud_txns} fraud | ${r.fraud_rate_pct}%`).join('\n')}
 
-Narrate your analysis and give your verdict.`,
+Surge begins: ${surgeStart?.hour ?? 'unclear'} | Peak rate: ${peakRow?.fraud_rate_pct ?? '?'}% at ${peakRow?.hour ?? '?'}
+Alert type: ${alert.type} | Merchant: ${alert.details.merchant} | BIN: ${alert.details.bin}
+
+React to what you see in these specific rows.`,
     onText,
   );
+}
 
-  return data;
+// Phase 2: Full analysis after history data arrives — references specific transaction rows
+export async function runAnalyzeHistory(
+  alert: Alert,
+  data: import('../types').DiagnosisData,
+  llmConfig: LLMConfig,
+  onText: (t: string) => void,
+): Promise<void> {
+  const txnSample = data.sampleTransactions.slice(0, 8);
+  const fraudTxns = txnSample.filter(t => t.response_code !== '00' || !t.has_history);
+
+  await streamClaude(
+    llmConfig,
+    `You are a senior fraud analyst. Transaction history just loaded. Continue your analysis — you already reviewed the FVR.
+Now look at the SPECIFIC transaction rows and the 6-month trend below.
+Quote actual TXN IDs and PANs. Call out the exact pattern you see in the data.
+Then give your final assessment: True Positive or False Positive, and state your confidence.
+Max 180 words. No headers. Direct language — you are building the case record.`,
+    `Transaction history loaded. Here are the most recent transactions:
+
+${txnSample.map(t =>
+  `${t.txn_id} | ${t.timestamp.split(' ')[1]} | ${t.masked_pan} | $${t.amount_usd} | RC:${t.response_code} (${t.rc_description}) | ${t.pos_entry_mode} | MFA:${t.mfa_status} | ${t.country} | Prior history: ${t.has_history ? 'Yes' : 'NONE'}`
+).join('\n')}
+
+6-month baseline trend:
+${data.sixMonthTrend.map(m => `${m.month}: ${m.txns.toLocaleString()} txns | ${m.fraud} fraud | ${m.fraud_rate}% fraud rate`).join('\n')}
+
+Key indicators:
+- POS shift: ${data.attackTaxonomyDetails.posEntryModeShift}
+- Amount pattern: ${data.attackTaxonomyDetails.concentrationAmount}
+- New card ratio: ${data.attackTaxonomyDetails.newCardsRatio}
+- ${data.geographicBreakdown[0].country}: ${data.geographicBreakdown[0].fraud_rate}% fraud rate (${data.geographicBreakdown[0].fraud.toLocaleString()} fraud txns)
+
+Reference specific transaction IDs in your analysis. Give your verdict and confidence level.`,
+    onText,
+  );
 }
 
 export async function runBlockRule(
   alert: Alert,
   diagnosisData: DiagnosisData,
+  conditions: import('../types').RuleCondition[],
   llmConfig: LLMConfig,
   onText: (t: string) => void,
 ): Promise<BlockRule> {
+  const editableConditions = conditions.filter(c => !c.locked);
+
   await streamClaude(
     llmConfig,
-    `You are a fraud analyst writing a block rule to stop an active attack.
-Explain in 2-3 sentences why each parameter in this rule was selected — the logic behind the combination.
-Then explain why this rule won't hurt genuine customers. Be precise about the tradeoffs. Max 130 words.`,
-    `Explain the block rule logic for:
-Alert: ${alert.type} | BIN: ${alert.details.bin} | Merchant: ${alert.details.caid}
-POS shift: ${diagnosisData.attackTaxonomyDetails.posEntryModeShift}
-Amount pattern: ${diagnosisData.attackTaxonomyDetails.concentrationAmount}
-Card ratio: ${diagnosisData.attackTaxonomyDetails.cardPresentRatio}`,
+    `You are a fraud analyst explaining the logic behind a block rule you just configured.
+For each parameter the analyst has set, explain in one sentence why it was chosen and what fraud signal it targets.
+Then in one sentence explain why genuine customers with different profiles are protected.
+Max 140 words. No headers. Speak directly to the analyst.`,
+    `Block rule configured for: ${alert.type} | BIN: ${alert.details.bin} | CAID: ${alert.details.caid}
+
+Conditions set by analyst:
+${editableConditions.map(c =>
+  c.operator === 'BETWEEN'
+    ? `${c.label}: ${c.operator} ${c.value} AND ${c.value2}`
+    : `${c.label}: ${c.operator} (${c.value})`
+).join('\n')}
+
+Context:
+- POS shift observed: ${diagnosisData.attackTaxonomyDetails.posEntryModeShift}
+- Amount pattern: ${diagnosisData.attackTaxonomyDetails.concentrationAmount}
+- New card ratio: ${diagnosisData.attackTaxonomyDetails.newCardsRatio}
+
+Explain why each condition targets fraud, and why genuine customers are protected.`,
     onText,
   );
 
