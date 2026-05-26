@@ -25,6 +25,7 @@ interface Props {
   llmConfig: LLMConfig;
   onReset: () => void;
   onError: (msg: string) => void;
+  onProgress?: (statuses: StepStatus[], verdict: string | null) => void;
 }
 
 const STEP_LABELS = [
@@ -38,7 +39,7 @@ const STEP_LABELS = [
 
 const init = (): StepState[] => STEP_LABELS.map(() => ({ status: 'idle', agentText: '' }));
 
-export default function InvestigationTimeline({ alert, llmConfig, onReset, onError }: Props) {
+export default function InvestigationTimeline({ alert, llmConfig, onReset, onError, onProgress }: Props) {
   const [steps, setSteps] = useState<StepState[]>(init);
   const [alertProfile, setAlertProfile] = useState<AlertProfile | null>(null);
   const [queries, setQueries] = useState<Query[]>([]);
@@ -57,6 +58,10 @@ export default function InvestigationTimeline({ alert, llmConfig, onReset, onErr
   function appendText(idx: number, text: string) {
     setSteps(prev => prev.map((s, i) => i === idx ? { ...s, agentText: s.agentText + text } : s));
   }
+
+  React.useEffect(() => {
+    onProgress?.(steps.map(s => s.status), assessment?.verdict ?? null);
+  }, [steps, assessment]);
 
   React.useEffect(() => {
     if (startedRef.current) return;
