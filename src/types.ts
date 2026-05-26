@@ -35,13 +35,15 @@ export interface Query {
   query: string;
 }
 
+// Fraud is not known in real-time — FVR tracks authorization behavior signals
 export interface FVRRow {
   hour: string;
   total_txns: number;
-  fraud_txns: number;
-  fraud_rate_pct: number;
-  total_amount: number;
-  fraud_amount: number;
+  decline_count: number;
+  decline_rate_pct: number;
+  new_pan_count: number;
+  keyed_entry_count: number;
+  avg_amount_usd: number;
 }
 
 export interface SampleTransaction {
@@ -55,6 +57,7 @@ export interface SampleTransaction {
   mfa_status: string;
   country: string;
   has_history: boolean;
+  is_new_pan: boolean;
 }
 
 export interface ResponseCode {
@@ -62,21 +65,22 @@ export interface ResponseCode {
   description: string;
   count: number;
   pct: number;
-  is_fraud_indicator: boolean;
+  is_suspicion_indicator: boolean;
 }
 
 export interface GeoBreakdown {
   country: string;
   txns: number;
-  fraud: number;
-  fraud_rate: number;
+  decline_count: number;
+  decline_rate: number;
+  new_pan_count: number;
   amount_usd: number;
 }
 
 export interface PanVelocityRow {
   masked_pan: string;
   txn_count: number;
-  fraud_count: number;
+  decline_count: number;
   total_spend: number;
   has_prior_history: boolean;
   first_seen: string;
@@ -85,15 +89,17 @@ export interface PanVelocityRow {
 export interface AmountBucket {
   range: string;
   count: number;
-  fraud_count: number;
-  pct_of_fraud: number;
+  decline_count: number;
+  pct_of_total: number;
 }
 
+// Historical trend uses settled data — decline rate is the real-time-safe proxy
 export interface MonthTrend {
   month: string;
   txns: number;
-  fraud: number;
-  fraud_rate: number;
+  decline_count: number;
+  decline_rate: number;
+  avg_amount: number;
 }
 
 export interface AlertProfile {
@@ -102,10 +108,11 @@ export interface AlertProfile {
   matchedPattern: string;
   velocityMetrics: {
     txnsLastHour: number;
-    fraudLastHour: number;
-    fraudRatePct: string;
+    declinesLastHour: number;
+    declineRatePct: string;
     baselineHourly: number;
     surgeMultiplier: string;
+    newPanRatio: string;
   };
   merchantProfile: {
     registrationDate: string;
@@ -135,19 +142,19 @@ export interface DiagnosisData {
     posEntryModeShift: string;
     concentrationAmount: string;
     historicalActivity: string;
-    cardPresentRatio: string;
-    newCardsRatio: string;
+    newPanRatio: string;
+    mfaBypassRate: string;
   };
   summary: {
     totalTxns4h: number;
-    totalFraud4h: number;
-    totalFraudAmount: number;
+    totalDeclines4h: number;
+    declineRate4h: string;
     uniquePANs: number;
     newPANs: number;
     peakHour: string;
-    peakFraudRate: string;
+    peakDeclineRate: string;
   };
-  isLikelyFP: boolean;
+  isLikelyOrganic: boolean;
   blockRule: BlockRule | null;
 }
 
@@ -155,11 +162,11 @@ export interface BlockRule {
   rule: string;
   variables: string[];
   impact: string;
-  fraudBlocked: number;
-  genuineBlocked: number;
-  catchRate: number;
+  suspiciousPatternBlocked: number;
+  legitimateImpacted: number;
+  patternCoverage: number;
   falsePositiveRate: number;
-  estimatedFraudSavings: number;
+  estimatedRiskExposure: number;
   ruleId: string;
   expiryHours: number;
   rationale: string;
@@ -195,15 +202,16 @@ export interface RuleCondition {
 }
 
 export interface BlockImpact {
-  fraudBlocked: number;
-  genuineBlocked: number;
-  catchRate: number;
+  suspiciousPatternBlocked: number;
+  legitimateImpacted: number;
+  patternCoverage: number;
   falsePositiveRate: number;
-  estimatedSavings: number;
+  estimatedRiskExposure: number;
 }
 
+// Outcome is pattern-based, not fraud-confirmed — fraud reconciles 3–7 days later
 export interface Assessment {
-  verdict: 'True Positive' | 'False Positive';
+  verdict: 'Suspicious — Action Required' | 'Organic — Close Alert';
   confidence: 'High' | 'Medium' | 'Low';
   reasonCode: string;
   notes: string;

@@ -85,13 +85,14 @@ export default function Step1AlertAnalysis({ status, agentText, alertProfile, on
               <TrendingUp size={12} className="text-brand-primary" />
               <span className="text-xs font-semibold text-gray-700">Real-Time Velocity Metrics</span>
             </div>
-            <div className="grid grid-cols-5 divide-x divide-gray-100">
+            <div className="grid grid-cols-6 divide-x divide-gray-100">
               {[
-                { label: 'Txns / Hour', value: alertProfile.velocityMetrics.txnsLastHour.toLocaleString(), red: false },
-                { label: 'Fraud / Hour', value: alertProfile.velocityMetrics.fraudLastHour.toLocaleString(), red: true },
-                { label: 'Fraud Rate', value: alertProfile.velocityMetrics.fraudRatePct, red: true },
-                { label: 'Baseline / Hr', value: alertProfile.velocityMetrics.baselineHourly.toString(), red: false },
-                { label: 'Surge ×', value: alertProfile.velocityMetrics.surgeMultiplier, red: alertProfile.riskScore > 50 },
+                { label: 'Txns / Hour',    value: alertProfile.velocityMetrics.txnsLastHour.toLocaleString(),  red: false },
+                { label: 'Declines / Hr',  value: alertProfile.velocityMetrics.declinesLastHour.toLocaleString(), red: true },
+                { label: 'Decline Rate',   value: alertProfile.velocityMetrics.declineRatePct,                 red: true },
+                { label: 'New PAN Ratio',  value: alertProfile.velocityMetrics.newPanRatio,                    red: alertProfile.riskScore > 50 },
+                { label: 'Baseline / Hr',  value: alertProfile.velocityMetrics.baselineHourly.toString(),      red: false },
+                { label: 'Surge ×',        value: alertProfile.velocityMetrics.surgeMultiplier,                red: alertProfile.riskScore > 50 },
               ].map(m => (
                 <div key={m.label} className="px-3 py-3 text-center">
                   <p className={`text-lg font-black ${m.red ? 'text-red-600' : 'text-gray-900'}`}>{m.value}</p>

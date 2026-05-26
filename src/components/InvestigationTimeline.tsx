@@ -111,7 +111,7 @@ export default function InvestigationTimeline({ alert, llmConfig, onReset, onErr
     setAssessment(a);
     patchStep(2, { status: 'complete' });
 
-    if (a.verdict === 'False Positive') {
+    if (a.verdict === 'Organic — Close Alert') {
       patchStep(3, { status: 'skipped', agentText: '' });
       patchStep(4, { status: 'skipped', agentText: '' });
       await step6(a, false, false);

@@ -78,20 +78,20 @@ export default function Step4BlockRule({
           {impact && (
             <div className="grid grid-cols-4 gap-3">
               <div className="border border-green-200 bg-green-50 rounded-lg p-3 text-center">
-                <p className="text-2xl font-black text-green-700">{impact.catchRate}%</p>
-                <p className="text-[10px] text-green-600 mt-0.5">Fraud Catch Rate</p>
+                <p className="text-2xl font-black text-green-700">{impact.patternCoverage}%</p>
+                <p className="text-[10px] text-green-600 mt-0.5">Pattern Coverage</p>
               </div>
               <div className="border border-red-200 bg-red-50 rounded-lg p-3 text-center">
-                <p className="text-2xl font-black text-red-700">{impact.fraudBlocked.toLocaleString()}</p>
-                <p className="text-[10px] text-red-600 mt-0.5">Fraud Txns Blocked</p>
+                <p className="text-2xl font-black text-red-700">{impact.suspiciousPatternBlocked.toLocaleString()}</p>
+                <p className="text-[10px] text-red-600 mt-0.5">Suspicious Txns Blocked</p>
               </div>
               <div className="border border-yellow-200 bg-yellow-50 rounded-lg p-3 text-center">
-                <p className="text-2xl font-black text-yellow-700">{impact.genuineBlocked.toLocaleString()}</p>
-                <p className="text-[10px] text-yellow-600 mt-0.5">Genuine Impacted</p>
+                <p className="text-2xl font-black text-yellow-700">{impact.legitimateImpacted.toLocaleString()}</p>
+                <p className="text-[10px] text-yellow-600 mt-0.5">Legitimate Impacted</p>
               </div>
               <div className="border border-blue-200 bg-blue-50 rounded-lg p-3 text-center">
-                <p className="text-2xl font-black text-blue-700">${impact.estimatedSavings.toLocaleString()}</p>
-                <p className="text-[10px] text-blue-600 mt-0.5">Est. Fraud Savings</p>
+                <p className="text-2xl font-black text-blue-700">${impact.estimatedRiskExposure.toLocaleString()}</p>
+                <p className="text-[10px] text-blue-600 mt-0.5">Est. Risk Exposure</p>
               </div>
             </div>
           )}

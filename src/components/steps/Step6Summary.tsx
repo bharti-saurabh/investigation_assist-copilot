@@ -12,7 +12,7 @@ interface Props {
 }
 
 export default function Step6Summary({ status, agentText, summary, assessment, onReset }: Props) {
-  const isTP = assessment === 'True Positive';
+  const isSuspicious = assessment === 'Suspicious — Action Required';
 
   return (
     <div>
@@ -22,14 +22,14 @@ export default function Step6Summary({ status, agentText, summary, assessment, o
 
       {summary && (
         <div className="mt-4 space-y-4">
-          {/* Verdict banner */}
-          <div className={`border-2 rounded-xl p-4 flex items-center gap-4 ${isTP ? 'bg-red-50 border-red-300' : 'bg-green-50 border-green-300'}`}>
-            <div className={`w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0 ${isTP ? 'bg-red-100' : 'bg-green-100'}`}>
-              <CheckCircle2 size={24} className={isTP ? 'text-red-600' : 'text-green-600'} />
+          {/* Outcome banner */}
+          <div className={`border-2 rounded-xl p-4 flex items-center gap-4 ${isSuspicious ? 'bg-orange-50 border-orange-300' : 'bg-green-50 border-green-300'}`}>
+            <div className={`w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0 ${isSuspicious ? 'bg-orange-100' : 'bg-green-100'}`}>
+              <CheckCircle2 size={24} className={isSuspicious ? 'text-orange-600' : 'text-green-600'} />
             </div>
             <div>
-              <p className={`text-lg font-black ${isTP ? 'text-red-800' : 'text-green-800'}`}>{assessment}</p>
-              <p className={`text-xs ${isTP ? 'text-red-600' : 'text-green-600'}`}>{summary.status}</p>
+              <p className={`text-lg font-black ${isSuspicious ? 'text-orange-800' : 'text-green-800'}`}>{assessment}</p>
+              <p className={`text-xs ${isSuspicious ? 'text-orange-600' : 'text-green-600'}`}>{summary.status}</p>
             </div>
             <div className="ml-auto text-right">
               <p className="text-[10px] text-gray-500">Ticket Reference</p>
@@ -95,11 +95,11 @@ export default function Step6Summary({ status, agentText, summary, assessment, o
             </div>
           </div>
 
-          {isTP && (
+          {isSuspicious && (
             <div className="flex items-center gap-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
               <div className="w-2 h-2 rounded-full bg-blue-500 animate-pulse flex-shrink-0" />
               <p className="text-xs text-blue-700">
-                <strong>{summary.monitoringDays}-day monitoring window active.</strong> Automated alerts will fire if fraud rate increases beyond threshold on this CAID/BIN.
+                <strong>{summary.monitoringDays}-day monitoring window active.</strong> Fraud reconciliation expected in 3–5 business days. Automated alerts will fire if decline rate exceeds threshold on this CAID/BIN.
               </p>
             </div>
           )}
