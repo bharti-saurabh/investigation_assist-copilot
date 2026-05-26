@@ -1,11 +1,30 @@
 import React, { useState } from 'react';
 import { ChevronRight, TrendingUp, Store, History } from 'lucide-react';
 import AgentMessage from '../shared/AgentMessage';
-import { AlertProfile, StepStatus } from '../../types';
+import { Alert, AlertProfile, StepStatus } from '../../types';
+
+function buildDefaultNote(alert: Alert): string {
+  const { bin, merchant, geography, issuerName, attackTaxonomy } = alert.details;
+  switch (alert.type) {
+    case 'BIN Attack':
+      return `Velocity surge on BIN ${bin} at ${merchant} (${geography}). Pattern matches ${attackTaxonomy} — high decline rate and new PAN concentration expected. ${alert.previousAlerts.length > 0 ? `${alert.previousAlerts.length} prior incident(s) on this entity.` : 'No prior incidents.'} Pulling FVR to confirm surge timing and POS mode shift.`;
+    case 'ATM Cashout':
+      return `Cross-border velocity on BIN ${bin} at ${merchant} (${geography}). Issuer is ${issuerName} — geography mismatch is the key signal. Checking decline rate and PAN velocity against ${geography} baseline. ${alert.previousAlerts.length > 0 ? 'Prior incidents noted.' : 'First alert on this entity.'}`;
+    case 'CNP Alert':
+      return `Suspected card testing on BIN ${bin} at ${merchant} (CNP, ${geography}). ${attackTaxonomy} — expect low-amount clustering and high MFA bypass rate. ${alert.previousAlerts.length > 0 ? 'Prior incident on this entity.' : 'No prior incidents.'} Pulling FVR to confirm amount distribution and decline pattern.`;
+    case 'POS Alert':
+      return `High-value POS anomaly on BIN ${bin} at ${merchant} (${geography}). ${issuerName} issuer — ${attackTaxonomy} pattern. Checking POS entry mode shift and PAN history. ${alert.previousAlerts.length > 0 ? 'Prior incidents on file.' : 'No prior incidents on this entity.'}`;
+    case 'PRA Alert':
+      return `Low-severity PRA — ${merchant} (${geography}, ${issuerName}). ${attackTaxonomy} — likely organic growth. ${alert.previousAlerts.length > 0 ? 'Prior incident flagged as seasonal.' : ''} Checking 6-month decline trend to confirm volume is within expected seasonal bounds before closing.`;
+    default:
+      return `Alert on BIN ${bin} at ${merchant} (${geography}). ${attackTaxonomy}. Reviewing authorization signals — pulling FVR and transaction history to assess pattern.`;
+  }
+}
 
 interface Props {
   status: StepStatus;
   agentText: string;
+  alert: Alert;
   alertProfile: AlertProfile | null;
   onProceed: () => void;
 }
@@ -48,8 +67,8 @@ function RiskGauge({ score }: { score: number }) {
   );
 }
 
-export default function Step1AlertAnalysis({ status, agentText, alertProfile, onProceed }: Props) {
-  const [notes, setNotes] = useState('');
+export default function Step1AlertAnalysis({ status, agentText, alert, alertProfile, onProceed }: Props) {
+  const [notes, setNotes] = useState(() => buildDefaultNote(alert));
   const canProceed = notes.trim().length >= 10;
 
   return (

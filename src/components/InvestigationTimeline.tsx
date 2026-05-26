@@ -181,6 +181,7 @@ export default function InvestigationTimeline({ alert, llmConfig, onReset, onErr
         <Step1AlertAnalysis
           status={steps[0].status}
           agentText={steps[0].agentText}
+          alert={alert}
           alertProfile={alertProfile}
           onProceed={step2}
         />
