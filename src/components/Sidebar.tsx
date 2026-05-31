@@ -30,8 +30,8 @@ export default function Sidebar({ alerts, selectedId, onSelect }: Props) {
             <ShieldAlert size={16} className="text-brand-primary" />
           </div>
           <div>
-            <p className="text-sm font-bold text-white leading-none">IA Copilot</p>
-            <p className="text-[10px] text-blue-300 mt-0.5">Fraud Investigation Assist</p>
+            <p className="text-sm font-bold text-white leading-none">Investigation Assist</p>
+            <p className="text-[10px] text-blue-300 mt-0.5">Fraud Operations · AI Copilot</p>
           </div>
         </div>
         <div className="flex items-center gap-2">
