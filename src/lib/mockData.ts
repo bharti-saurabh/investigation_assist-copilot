@@ -522,11 +522,11 @@ export function buildEmailDraft(alert: Alert, blockRule: BlockRule | null): Emai
     priority: 'URGENT',
     issuer: alert.details.issuerName,
     recipients: [`fraud-ops@${alert.details.issuerName.toLowerCase().replace(/\s/g, '')}.com`],
-    cc: ['fraud-monitoring@visapayments.com', 'siem-ingest@internal.visa.com'],
+    cc: ['fraud-monitoring@fraud-ops.internal', 'siem-ingest@network-ops.internal'],
     subject: `[URGENT] Suspicious Transaction Pattern Detected — BIN ${alert.details.bin} | ${alert.details.issuerName} | Case ${alert.id}`,
     body: `Dear ${alert.details.issuerName} Fraud Operations Team,
 
-This is an urgent notification from the Visa Global Fraud Monitoring Center.
+This is an urgent notification from the Global Fraud Monitoring Center.
 
 Our real-time authorization monitoring has detected a suspicious behavioral pattern on your portfolio that warrants immediate review and protective action.
 
@@ -576,7 +576,7 @@ REQUESTED ISSUER ACTIONS
 Fraud confirmation data, once reconciled, will be shared via the standard post-incident report within 5–7 business days.
 
 Regards,
-Fraud Monitoring Analyst — Visa Global Fraud Operations
+Fraud Monitoring Analyst — Global Fraud Operations
 Case Reference: ${alert.id} | Classification: CONFIDENTIAL`,
   };
 }

@@ -48,9 +48,9 @@ const SOP_BIN_ATTACK: SopDefinition = {
   background:
     'A BIN attack (also called BIN enumeration or card-testing) occurs when threat actors obtain a batch of compromised card data — through POS compromise, dark-web purchases, or large-scale breaches — and systematically probe a live merchant to verify which PANs remain active. The hallmark signal is a concentrated velocity surge at a single CAID: many distinct new PANs in a short window, a high decline rate (cancelled cards returning 05/14 responses) mixed with a lower proportion of approvals (still-active cards confirmed viable for downstream fraud). Modern BIN attacks are automated, typically completing within 60–90 minutes before threat actors move to another merchant.',
   rationale:
-    'Approved test transactions establish viable PAN lists for immediate escalation to high-value card-present or CNP fraud. Each approval during the test phase is a card actively being enumerated. Delay in detection and blocking directly increases downstream issuer fraud exposure and chargeback liability, both of which accrue before cardholder reporting (3–7 days). Network rules (Visa GBPP Bulletin AP-2, Mastercard SAFE Threshold) mandate documented response within defined SLAs for high-severity velocity events; non-compliance risks network fines.',
+    'Approved test transactions establish viable PAN lists for immediate escalation to high-value card-present or CNP fraud. Each approval during the test phase is a card actively being enumerated. Delay in detection and blocking directly increases downstream issuer fraud exposure and chargeback liability, both of which accrue before cardholder reporting (3–7 days). Network rules (Brand Protection Program Bulletin AP-2, Excessive Authorization Monitoring threshold) mandate documented response within defined SLAs for high-severity velocity events; non-compliance risks network fines.',
   regulatoryContext:
-    'Visa Global Brand Protection Program (GBPP) AP-2 — High Velocity Testing. Mastercard SAFE Excessive Authorization Program. PCI DSS v4.0 §10.7 — incident response requirements. Internal Policy FRM-2024-07.',
+    'Network Brand Protection Program (GBPP) AP-2 — High Velocity Testing. Network Excessive Authorization Monitoring Program (EAMP). PCI DSS v4.0 §10.7 — incident response requirements. Internal Policy FRM-2024-07.',
   keyIndicators: [
     { metric: 'Surge Multiplier vs Baseline', suspiciousThreshold: '≥ 5×', organicRange: '< 2×', significance: 'Primary trigger — confirms abnormal velocity above seasonal norms' },
     { metric: 'Decline Rate (Current Hour)', suspiciousThreshold: '≥ 25%', organicRange: '< 8%', significance: 'High declines indicate a high proportion of cancelled or invalid cards being probed' },
@@ -198,7 +198,7 @@ const SOP_ATM_CASHOUT: SopDefinition = {
   rationale:
     'ATM cashouts can drain hundreds of thousands of dollars within a single business day. The multi-geography pattern means the cardholder (in the issuer country) is unaware and cannot self-report in time. Response must coordinate three parties simultaneously: the network (block or flag), the acquirer (ATM monitoring), and the issuer (account-level intervention). Network rules require issuers to receive accelerated notification for ATM fraud events. Failure to notify within the SLA window shifts chargeback liability away from the issuer and toward the acquirer.',
   regulatoryContext:
-    'Visa Dispute Resolution Rule 10.5 — ATM Transaction Liability. Mastercard Chargeback Guide Section 4.7 — Counterfeit/Lost/Stolen at ATM. Cross-border ATM notification requirements per bilateral acquirer agreements. Internal Policy FRM-ATM-2024-03.',
+    'Network Dispute Resolution Rules §10.5 — ATM Transaction Liability. Network Chargeback Guide §4.7 — Counterfeit/Lost/Stolen at ATM. Cross-border ATM notification requirements per bilateral acquirer agreements. Internal Policy FRM-ATM-2024-03.',
   keyIndicators: [
     { metric: 'Issuer Country vs. Transaction Country', suspiciousThreshold: 'Mismatch (different regions)', organicRange: 'Match or adjacent markets', significance: 'Core cashout signal — cards issued in one country appearing in a remote geography' },
     { metric: 'Amount Clustering (per PAN)', suspiciousThreshold: '$200–$500 range, 1–2 txns per PAN', organicRange: 'Variable amounts, repeat customers', significance: 'Systematic withdrawal near daily limits — one transaction per card, then move on' },
@@ -344,7 +344,7 @@ const SOP_CNP_ALERT: SopDefinition = {
   rationale:
     'Card testing itself causes limited direct financial damage but is the precursor step to high-value fraud. Approved test transactions create a confirmed-viable PAN list that can immediately be used for large CNP purchases at other merchants, or sold on criminal marketplaces. Early detection and notification of approved PANs to the issuer interrupts this downstream escalation. CNP fraud accounts for 65-75% of total card fraud by value in e-commerce markets; issuers rely on network-level detection to catch testing events before cardholder reporting.',
   regulatoryContext:
-    'Visa Compelling Evidence 3.0 — authorization history requirements for CNP disputes. EMV 3DS specification — step-up authentication triggers. PCI DSS v4.0 §6.4 — e-commerce security controls. Network CNP Fraud Monitoring Program threshold: decline rate + velocity composite score.',
+    'Compelling Evidence 3.0 (CE3) — authorization history requirements for CNP (Card Not Present) disputes. EMV 3DS specification — step-up authentication triggers. PCI DSS v4.0 §6.4 — e-commerce security controls. Network CNP Fraud Monitoring Program threshold: decline rate + velocity composite score.',
   keyIndicators: [
     { metric: 'Amount Distribution — Low-value bucket (< $10)', suspiciousThreshold: '> 40% of transactions in $0–$10 range', organicRange: '< 10%', significance: 'Card testing uses minimal amounts to verify PANs without triggering fraud filters or creating visible charges' },
     { metric: 'MFA Bypass Rate', suspiciousThreshold: '> 60% bypassing step-up auth', organicRange: '< 20%', significance: 'Bots exploit 3DS exemptions (low-value, trusted merchant) or merchant-side auth gaps to avoid step-up' },
@@ -355,7 +355,7 @@ const SOP_CNP_ALERT: SopDefinition = {
   escalationCriteria: [
     'Approval rate for test transactions exceeds 30% → Significant valid-card batch; escalate immediately for issuer PAN notification',
     'Same merchant shows recurrence within 48 hours → Persistent bot campaign; escalate to Digital Risk',
-    'Merchant dispute resolution SLA approaching (Visa CE3.0 requires auth history) → Engage compliance team',
+    'Merchant dispute resolution SLA (Service Level Agreement) approaching (CE3.0 requires auth history) → Engage compliance team',
     'Evidence of merchant complicity (static exemption flags, absent 3DS) → Merchant investigation; escalate to Merchant Risk',
     'Testing batch linked to known dark-web card shop intelligence → Escalate to Threat Intelligence',
   ],
@@ -489,7 +489,7 @@ const SOP_POS_ALERT: SopDefinition = {
   rationale:
     'POS compromise creates a persistent, ongoing data capture risk until the terminal is physically remediated. A single compromised terminal can silently harvest hundreds of PANs over days or weeks before detection, each of which may be cloned and used elsewhere weeks later. Unlike digital fraud, POS compromise requires physical intervention (device inspection, POS software audit), coordinated with the merchant. Network rules require mandatory merchant notification and may require terminal decertification and re-inspection before re-activation.',
   regulatoryContext:
-    'PCI DSS v4.0 §9.5 — physical terminal security requirements. Visa PIN Security Program — terminal integrity requirements. Mastercard Site Data Protection (SDP) Program. Network Terminal Action Program (TAP) — compromised terminal handling procedures. Merchant Agreement Clause 14.3 — incident disclosure obligations.',
+    'PCI DSS v4.0 §9.5 — physical terminal security requirements. Network PIN Security Program — terminal integrity requirements. Network Site Data Protection Program (NSDP). Network Terminal Action Program (TAP) — compromised terminal handling procedures. Merchant Agreement Clause 14.3 — incident disclosure obligations.',
   keyIndicators: [
     { metric: 'POS Entry Mode Shift (Chip → Magnetic/Keyed)', suspiciousThreshold: 'Magnetic/keyed > 25% when baseline < 3%', organicRange: 'Magnetic < 3% at EMV-capable terminal', significance: 'Entry mode shift is the primary POS compromise indicator — chip bypass forces fallback to less secure magnetic strip' },
     { metric: 'New PAN Ratio at this Terminal', suspiciousThreshold: '< 20% (genuine customers, not stolen cards)', organicRange: 'N/A', significance: 'Unlike BIN attacks, POS compromise captures real customer cards — expect many established PANs, not new ones' },
@@ -635,7 +635,7 @@ const SOP_PRA_ALERT: SopDefinition = {
   rationale:
     'PRAs exist to reduce false negatives in the detection system — catching fraud events before they reach BIN Attack or POS Alert severity. However, unnecessary action on organic PRAs has direct business consequences: blocking a legitimate merchant\'s transactions damages the merchant relationship, generates false-positive chargebacks, and may trigger regulatory scrutiny of the network\'s fraud monitoring practices. The SOP mandates a data-driven organic/suspicious classification before any intervention — "when in doubt, do not block" is the default posture for PRA alerts.',
   regulatoryContext:
-    'Visa Risk Management Standards — False Positive Rate targets. Network Merchant Monitoring Program — PRA generation criteria and response documentation requirements. Internal Policy FRM-PRA-2025-01 — organic close documentation standards. Merchant Agreement — merchant right to dispute erroneous blocks.',
+    'Network Risk Management Standards — False Positive Rate targets. Network Merchant Monitoring Program — PRA (Potential Risk Alert) generation criteria and response documentation requirements. Internal Policy FRM-PRA-2025-01 — organic close documentation standards. Merchant Agreement — merchant right to dispute erroneous blocks.',
   keyIndicators: [
     { metric: 'Decline Rate vs. 6-Month Baseline', suspiciousThreshold: '> 2× historical average', organicRange: 'Within ±2% of historical average', significance: 'An organic PRA typically shows a volume increase but STABLE decline rate — fraud shows both volume and decline rate rising' },
     { metric: 'New PAN Ratio', suspiciousThreshold: '> 20%', organicRange: '< 12% (seasonal shoppers, not stolen batches)', significance: 'Organic volume increases come from returning or slightly expanded customer base — not large new-PAN influx' },

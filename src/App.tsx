@@ -9,8 +9,12 @@ import InvestigationTimeline from './components/InvestigationTimeline';
 import SopPanel from './components/SopPanel';
 import AppHeader from './components/AppHeader';
 import StepProgressBar from './components/StepProgressBar';
+import Dashboard from './components/Dashboard';
+
+type Tab = 'investigations' | 'dashboard';
 
 export default function App() {
+  const [activeTab, setActiveTab] = useState<Tab>('investigations');
   const [selectedAlert, setSelectedAlert] = useState<Alert | null>(null);
   const [activeAlert, setActiveAlert] = useState<Alert | null>(null);
   const [llmConfig, setLLMConfig] = useState<LLMConfig>(loadLLMConfig);
@@ -52,8 +56,18 @@ export default function App() {
     <div className="flex flex-col h-screen overflow-hidden bg-gray-100">
 
       {/* Full-width Straive header */}
-      <AppHeader llmConfig={llmConfig} onOpenSettings={() => setShowSettings(true)} />
+      <AppHeader
+        llmConfig={llmConfig}
+        onOpenSettings={() => setShowSettings(true)}
+        activeTab={activeTab}
+        onTabChange={setActiveTab}
+      />
 
+      {/* Dashboard tab — full width, no sidebar */}
+      {activeTab === 'dashboard' && <Dashboard />}
+
+      {/* Investigations tab */}
+      {activeTab === 'investigations' && <>
       {/* Full-width step progress bar */}
       <StepProgressBar stepStatuses={stepStatuses} activeAlert={!!activeAlert} />
 
@@ -170,6 +184,8 @@ export default function App() {
           </div>
         </div>
       </div>
+
+      </>}
 
       {showSettings && (
         <SettingsPanel

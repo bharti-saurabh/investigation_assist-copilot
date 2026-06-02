@@ -1,6 +1,14 @@
 import React from 'react';
-import { AlertTriangle, Clock } from 'lucide-react';
+import { Clock } from 'lucide-react';
 import { Alert } from '../types';
+
+const TYPE_SUBTITLES: Record<string, string> = {
+  'BIN Attack':    'Bank Identification Number Attack',
+  'ATM Cashout':   'Automated Teller Machine Cashout',
+  'CNP Alert':     'Card Not Present Alert',
+  'POS Alert':     'Point of Sale Alert',
+  'PRA Alert':     'Potential Risk Alert',
+};
 
 interface Props {
   alerts: Alert[];
@@ -61,7 +69,8 @@ export default function Sidebar({ alerts, selectedId, onSelect }: Props) {
                 </div>
                 <span className="text-[10px] text-gray-500 font-mono">{alert.id}</span>
               </div>
-              <p className="text-xs font-semibold text-white mb-0.5">{alert.type}</p>
+              <p className="text-xs font-semibold text-white mb-0">{alert.type}</p>
+              <p className="text-[9px] text-blue-400/70 mb-0.5 leading-tight">{TYPE_SUBTITLES[alert.type] ?? alert.type}</p>
               <p className="text-[11px] text-gray-400 truncate">{alert.details.merchant}</p>
               <div className="flex items-center gap-1 mt-1.5">
                 <Clock size={9} className="text-gray-600" />

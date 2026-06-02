@@ -47,7 +47,7 @@ export default function AlertBanner({ alert, compact }: Props) {
         <div className="flex items-start gap-2">
           <Building2 size={13} className="text-gray-400 mt-0.5 flex-shrink-0" />
           <div>
-            <p className="text-[10px] text-gray-500 uppercase tracking-wide">Merchant · CAID</p>
+            <p className="text-[10px] text-gray-500 uppercase tracking-wide">Merchant · CAID (Card Acceptor ID)</p>
             <p className="text-xs text-gray-900 font-semibold">{d.merchant}</p>
             <p className="text-[10px] font-mono text-gray-500">{d.caid}</p>
           </div>
@@ -55,7 +55,7 @@ export default function AlertBanner({ alert, compact }: Props) {
         <div className="flex items-start gap-2">
           <CreditCard size={13} className="text-gray-400 mt-0.5 flex-shrink-0" />
           <div>
-            <p className="text-[10px] text-gray-500 uppercase tracking-wide">Issuer BIN · MCC</p>
+            <p className="text-[10px] text-gray-500 uppercase tracking-wide">BIN (Bank ID No.) · MCC</p>
             <p className="text-xs text-gray-900 font-semibold font-mono">{d.bin}</p>
             <p className="text-[10px] text-gray-500">{d.mcc} — {d.mccDescription}</p>
           </div>
