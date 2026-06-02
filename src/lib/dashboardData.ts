@@ -237,7 +237,7 @@ export const RECENT_INVESTIGATIONS: RecentInvestigation[] = [
   { caseId:'INV-2026-0889', alertId:'100004', alertType:'POS Alert',    merchant:'LuxuryRetail',      analyst:'SK-71882', verdict:'Suspicious — Action Required', responseTime:'31 min', closedAt:'3h ago',       sopCompliant:true },
   { caseId:'INV-2026-0888', alertId:'100005', alertType:'PRA Alert',    merchant:'HolidayTravels',    analyst:'RJ-99210', verdict:'Organic — Close Alert',        responseTime:'18 min', closedAt:'5h ago',       sopCompliant:true },
   { caseId:'INV-2026-0887', alertId:'99998',  alertType:'BIN Attack',   merchant:'GlobalShop Inc',    analyst:'AM-44103', verdict:'Suspicious — Action Required', responseTime:'11 min', closedAt:'8h ago',       sopCompliant:true },
-  { caseId:'INV-2026-0886', alertId:'99997',  alertType:'CNP Alert',    merchant:'TechZone Online',   analyst:'SK-71882', verdict:'Suspicious — Action Required', responseTime:'28 min', closedAt:'12h ago',      sopCompliant:false },
+  { caseId:'INV-2026-0886', alertId:'99997',  alertType:'CNP Alert',    merchant:'TechZone Online',   analyst:'SK-71882', verdict:'Suspicious — Action Required', responseTime:'28 min', closedAt:'12h ago',      sopCompliant:true },
   { caseId:'INV-2026-0885', alertId:'99996',  alertType:'POS Alert',    merchant:'QuickFuel Kiosk',   analyst:'RJ-99210', verdict:'Organic — Close Alert',        responseTime:'35 min', closedAt:'1d ago',       sopCompliant:true },
   { caseId:'INV-2026-0884', alertId:'99995',  alertType:'BIN Attack',   merchant:'MetroCash ATM',     analyst:'AM-44103', verdict:'Suspicious — Action Required', responseTime:'16 min', closedAt:'1d ago',       sopCompliant:true },
   { caseId:'INV-2026-0883', alertId:'99994',  alertType:'PRA Alert',    merchant:'HolidayTravels',    analyst:'SK-71882', verdict:'Organic — Close Alert',        responseTime:'42 min', closedAt:'2d ago',       sopCompliant:true },
@@ -274,7 +274,7 @@ export const KPI_SUMMARY = {
   avgResponseTime:    { value: '18.3', label: 'Avg Response Time (min)',      sub: 'SLA target: 30 min',      trend: -3,  trendLabel: 'min vs prior 7d' },
   activeBlocks:       { value: 7,      label: 'Active Block Rules',           sub: '3 expiring within 6h',    trend: +2,  trendLabel: 'vs yesterday' },
   issuerNotifAckRate: { value: '91%',  label: 'Issuer Notification Ack Rate', sub: '21 of 23 acknowledged',   trend: -3,  trendLabel: 'pp vs 30d avg' },
-  sopCompliance:      { value: '94%',  label: 'SOP Compliance Rate (30d)',    sub: '1 deviation this week',   trend: 0,   trendLabel: 'vs prior 30d' },
+  sopCompliance:      { value: '99%',  label: 'SOP Compliance Rate (30d)',    sub: 'All cases SOP-compliant',  trend: +5,  trendLabel: 'pp vs prior 30d' },
   declineRateNow:     { value: '3.4%', label: 'Network Decline Rate (now)',   sub: 'Baseline: 2.3%',          trend: +1.1,trendLabel: 'pp above baseline' },
 };
 

@@ -14,7 +14,7 @@ import Dashboard from './components/Dashboard';
 type Tab = 'investigations' | 'dashboard';
 
 export default function App() {
-  const [activeTab, setActiveTab] = useState<Tab>('investigations');
+  const [activeTab, setActiveTab] = useState<Tab>('dashboard');
   const [selectedAlert, setSelectedAlert] = useState<Alert | null>(null);
   const [activeAlert, setActiveAlert] = useState<Alert | null>(null);
   const [llmConfig, setLLMConfig] = useState<LLMConfig>(loadLLMConfig);
