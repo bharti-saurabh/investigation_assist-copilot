@@ -1,5 +1,5 @@
 import React from 'react';
-import { AlertTriangle, ShieldAlert, Clock, Wifi } from 'lucide-react';
+import { AlertTriangle, Clock } from 'lucide-react';
 import { Alert } from '../types';
 
 interface Props {
@@ -22,36 +22,20 @@ export default function Sidebar({ alerts, selectedId, onSelect }: Props) {
   const highCount = alerts.filter(a => a.severity === 'High').length;
 
   return (
-    <div className="w-64 flex-shrink-0 bg-brand-secondary flex flex-col" style={{ background: '#0D1B3E' }}>
-      {/* Logo */}
-      <div className="px-4 py-4 border-b border-white/10">
-        <div className="flex items-center gap-2.5 mb-3">
-          <div className="w-8 h-8 rounded-lg bg-brand-accent flex items-center justify-center shadow">
-            <ShieldAlert size={16} className="text-brand-primary" />
-          </div>
-          <div>
-            <p className="text-sm font-bold text-white leading-none">Investigation Assist</p>
-            <p className="text-[10px] text-blue-300 mt-0.5">Fraud Operations · AI Copilot</p>
-          </div>
-        </div>
-        <div className="flex items-center gap-2">
-          <div className="flex items-center gap-1.5 text-[10px] text-green-400 bg-green-400/10 border border-green-400/20 px-2 py-1 rounded">
-            <Wifi size={10} />
-            Live Monitoring
-          </div>
+    <div className="w-56 flex-shrink-0 flex flex-col" style={{ background: '#0D1B3E' }}>
+      {/* Queue label */}
+      <div className="px-4 py-2.5 border-b border-white/10 flex items-center justify-between">
+        <p className="text-[10px] font-semibold text-blue-300 uppercase tracking-widest">
+          Alert Queue
+        </p>
+        <div className="flex items-center gap-1.5">
+          <span className="text-[10px] text-blue-400">{alerts.length} Pending</span>
           {highCount > 0 && (
-            <span className="text-[10px] bg-red-500 text-white px-2 py-0.5 rounded-full font-bold">
+            <span className="text-[9px] bg-red-500 text-white px-1.5 py-0.5 rounded-full font-bold">
               {highCount} HIGH
             </span>
           )}
         </div>
-      </div>
-
-      {/* Queue label */}
-      <div className="px-4 py-2.5 border-b border-white/5">
-        <p className="text-[10px] font-semibold text-blue-300 uppercase tracking-widest">
-          Alert Queue — {alerts.length} Pending
-        </p>
       </div>
 
       {/* Alert list */}
